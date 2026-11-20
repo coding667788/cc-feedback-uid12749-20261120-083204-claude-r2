@@ -1,0 +1,1338 @@
+{
+  "scenarios": [
+    {
+      "name": "A_action_gap_seats_ok",
+      "results": [
+        {
+          "step": "prepare-two-candidates",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T1",
+            "request_id": "A-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PA",
+              "deadline": 200,
+              "identity_ids": [
+                "I1",
+                "I2"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "reader-before-finalize-seats-3-write-2",
+          "at": 150,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T1",
+            "request_id": null,
+            "at": 150,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S1",
+              "from_time": 150,
+              "next_boundary": 201,
+              "stable_until": 201,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 4,
+                "min_seats": 2,
+                "action_counts": {
+                  "read": 4,
+                  "write": 2
+                },
+                "min_for_actions": {
+                  "read": 2,
+                  "write": 2
+                },
+                "eligible_identities": [
+                  "I1",
+                  "I2",
+                  "I3",
+                  "I4"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C1",
+                  "identity_id": "I1",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C2",
+                  "identity_id": "I2",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C3",
+                  "identity_id": "I3",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 500
+                },
+                {
+                  "credential_id": "C4",
+                  "identity_id": "I4",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "finalize-action-gap",
+          "at": 200,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T1",
+            "request_id": "A-req-2",
+            "at": 200,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "COVERAGE_ACTION_GAP",
+              "message": "席位达标但授权动作的合格身份数不足",
+              "details": {
+                "services": [
+                  {
+                    "service_id": "S1",
+                    "violations": [
+                      {
+                        "action": "write",
+                        "required": 2,
+                        "actual": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "B_joint_retirement_failure",
+      "results": [
+        {
+          "step": "prepare-both",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T2",
+            "request_id": "B-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PB",
+              "deadline": 200,
+              "identity_ids": [
+                "I1",
+                "I2"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "reader-still-three-seats",
+          "at": 150,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T2",
+            "request_id": null,
+            "at": 150,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S2",
+              "from_time": 150,
+              "next_boundary": 201,
+              "stable_until": 201,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 3,
+                "min_seats": 2,
+                "action_counts": {
+                  "read": 3
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I1",
+                  "I2",
+                  "I3"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C1",
+                  "identity_id": "I1",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C2",
+                  "identity_id": "I2",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C3",
+                  "identity_id": "I3",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "finalize-joint-seat-gap",
+          "at": 200,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T2",
+            "request_id": "B-req-2",
+            "at": 200,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "COVERAGE_SEAT_GAP",
+              "message": "合格身份去重席位数低于服务最低席位要求",
+              "details": {
+                "services": [
+                  {
+                    "service_id": "S2",
+                    "required": 2,
+                    "actual": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "C_exact_expiry",
+      "results": [
+        {
+          "step": "prepare-I4-deadline-200",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T3",
+            "request_id": "C-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PC",
+              "deadline": 200,
+              "identity_ids": [
+                "I4"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "reader-at-exact-deadline-still-two-seats",
+          "at": 200,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T3",
+            "request_id": null,
+            "at": 200,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S3",
+              "from_time": 200,
+              "next_boundary": 201,
+              "stable_until": 201,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 2,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 2
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I4",
+                  "I5"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C3",
+                  "identity_id": "I4",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C4",
+                  "identity_id": "I5",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "finalize-exactly-at-deadline-ok",
+          "at": 200,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T3",
+            "request_id": "C-req-2",
+            "at": 200,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PC",
+              "retired_identities": [
+                "I4"
+              ],
+              "affected_services": [
+                "S3"
+              ],
+              "evidence": [
+                {
+                  "service_id": "S3",
+                  "now": 200,
+                  "min_seats": 1,
+                  "seat_count": 1,
+                  "seat_ok": true,
+                  "min_for_actions": {
+                    "read": 1
+                  },
+                  "action_counts": {
+                    "read": 1
+                  },
+                  "action_violations": [],
+                  "eligible_identities": [
+                    "I5"
+                  ],
+                  "credential_evidence": [
+                    {
+                      "credential_id": "C3",
+                      "identity_id": "I4",
+                      "generation": 1,
+                      "eligible": false,
+                      "reason": "IDENTITY_RETIRED",
+                      "valid_from": 0,
+                      "valid_until": 200,
+                      "effective_until": 200
+                    },
+                    {
+                      "credential_id": "C4",
+                      "identity_id": "I5",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 400
+                    }
+                  ],
+                  "satisfied": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "reader-next-tick-I4-gone-I5-covers",
+          "at": 201,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T3",
+            "request_id": null,
+            "at": 201,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S3",
+              "from_time": 201,
+              "next_boundary": 401,
+              "stable_until": 401,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 1,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 1
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I5"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C3",
+                  "identity_id": "I4",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "IDENTITY_RETIRED",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C4",
+                  "identity_id": "I5",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "reader-after-I5-window-closes-no-seats",
+          "at": 401,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T3",
+            "request_id": null,
+            "at": 401,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S3",
+              "from_time": 401,
+              "next_boundary": null,
+              "stable_until": null,
+              "coverage": {
+                "satisfied": false,
+                "seat_count": 0,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 0
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": []
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C3",
+                  "identity_id": "I4",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "IDENTITY_RETIRED",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C4",
+                  "identity_id": "I5",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "D_cancel_then_reprepare",
+      "results": [
+        {
+          "step": "prepare-first-plan",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T4",
+            "request_id": "D-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PD1",
+              "deadline": 150,
+              "identity_ids": [
+                "I5"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "finalize-first-fails-seat-gap",
+          "at": 200,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T4",
+            "request_id": "D-req-2",
+            "at": 200,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "COVERAGE_SEAT_GAP",
+              "message": "合格身份去重席位数低于服务最低席位要求",
+              "details": {
+                "services": [
+                  {
+                    "service_id": "S4",
+                    "required": 2,
+                    "actual": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "step": "cancel-first-plan",
+          "at": 210,
+          "result": {
+            "type": "cancel",
+            "tenant_id": "T4",
+            "request_id": "D-req-3",
+            "at": 210,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PD1",
+              "cancelled_identities": [
+                "I5"
+              ],
+              "retained_migrations": [],
+              "note": "已提交迁移不回滚；旧凭据存续截止限制随计划取消而解除"
+            }
+          }
+        },
+        {
+          "step": "reprepare-second-plan",
+          "at": 220,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T4",
+            "request_id": "D-req-4",
+            "at": 220,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PD2",
+              "deadline": 250,
+              "identity_ids": [
+                "I5"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "migrate-new-credential-into-S4",
+          "at": 230,
+          "result": {
+            "type": "migrate",
+            "tenant_id": "T4",
+            "request_id": "D-req-5",
+            "at": 230,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "migration_id": "MG1",
+              "plan_id": "PD2",
+              "affected_services": [
+                "S4",
+                "S4X"
+              ],
+              "evidence": [
+                {
+                  "service_id": "S4",
+                  "now": 230,
+                  "min_seats": 2,
+                  "seat_count": 3,
+                  "seat_ok": true,
+                  "min_for_actions": {
+                    "read": 1
+                  },
+                  "action_counts": {
+                    "read": 3
+                  },
+                  "action_violations": [],
+                  "eligible_identities": [
+                    "I5",
+                    "I6",
+                    "I7"
+                  ],
+                  "credential_evidence": [
+                    {
+                      "credential_id": "C5",
+                      "identity_id": "I5",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 250
+                    },
+                    {
+                      "credential_id": "C6",
+                      "identity_id": "I6",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 400
+                    },
+                    {
+                      "credential_id": "C7",
+                      "identity_id": "I7",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 400
+                    }
+                  ],
+                  "satisfied": true
+                },
+                {
+                  "service_id": "S4X",
+                  "now": 230,
+                  "min_seats": 0,
+                  "seat_count": 0,
+                  "seat_ok": true,
+                  "min_for_actions": {},
+                  "action_counts": {},
+                  "action_violations": [],
+                  "eligible_identities": [],
+                  "credential_evidence": [],
+                  "satisfied": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "finalize-second-plan-ok",
+          "at": 260,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T4",
+            "request_id": "D-req-6",
+            "at": 260,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PD2",
+              "retired_identities": [
+                "I5"
+              ],
+              "affected_services": [
+                "S4"
+              ],
+              "evidence": [
+                {
+                  "service_id": "S4",
+                  "now": 260,
+                  "min_seats": 2,
+                  "seat_count": 2,
+                  "seat_ok": true,
+                  "min_for_actions": {
+                    "read": 1
+                  },
+                  "action_counts": {
+                    "read": 2
+                  },
+                  "action_violations": [],
+                  "eligible_identities": [
+                    "I6",
+                    "I7"
+                  ],
+                  "credential_evidence": [
+                    {
+                      "credential_id": "C5",
+                      "identity_id": "I5",
+                      "generation": 1,
+                      "eligible": false,
+                      "reason": "IDENTITY_RETIRED",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 250
+                    },
+                    {
+                      "credential_id": "C6",
+                      "identity_id": "I6",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 400
+                    },
+                    {
+                      "credential_id": "C7",
+                      "identity_id": "I7",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 400,
+                      "effective_until": 400
+                    }
+                  ],
+                  "satisfied": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "E_idempotency",
+      "results": [
+        {
+          "step": "prepare-first",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T5",
+            "request_id": "E-idem",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PE",
+              "deadline": 300,
+              "identity_ids": [
+                "I8"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "prepare-same-id-same-params-replays",
+          "at": 110,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T5",
+            "request_id": "E-idem",
+            "at": 110,
+            "replayed": true,
+            "status": "OK",
+            "data": {
+              "plan_id": "PE",
+              "deadline": 300,
+              "identity_ids": [
+                "I8"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "prepare-same-id-different-params-rejected",
+          "at": 120,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T5",
+            "request_id": "E-idem",
+            "at": 120,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "DUPLICATE_REQUEST",
+              "message": "租户 T5 内 request_id=E-idem 已用于不同参数/类型的请求",
+              "details": {
+                "existing_type": "prepare",
+                "incoming_type": "prepare"
+              }
+            }
+          }
+        },
+        {
+          "step": "finalize-before-deadline-fails",
+          "at": 200,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T5",
+            "request_id": "E-fail",
+            "at": 200,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "DEADLINE_NOT_REACHED",
+              "message": "当前时刻 200 早于旧凭据存续截止 300，不能终结",
+              "details": {
+                "now": 200,
+                "deadline": 300
+              }
+            }
+          }
+        },
+        {
+          "step": "finalize-same-request-replays-failure",
+          "at": 250,
+          "result": {
+            "type": "finalize",
+            "tenant_id": "T5",
+            "request_id": "E-fail",
+            "at": 250,
+            "replayed": true,
+            "status": "FAILED",
+            "error": {
+              "code": "DEADLINE_NOT_REACHED",
+              "message": "当前时刻 200 早于旧凭据存续截止 300，不能终结",
+              "details": {
+                "now": 200,
+                "deadline": 300
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "F_cross_tenant_migration_rejected",
+      "results": [
+        {
+          "step": "prepare-in-tenant-a",
+          "at": 100,
+          "result": {
+            "type": "prepare",
+            "tenant_id": "T6A",
+            "request_id": "F-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "plan_id": "PF",
+              "deadline": 400,
+              "identity_ids": [
+                "IA"
+              ],
+              "note": "候选与旧凭据存续截止已固定；迁移/终结时再做事务内覆盖验证"
+            }
+          }
+        },
+        {
+          "step": "cross-tenant-move-rejected",
+          "at": 150,
+          "result": {
+            "type": "migrate",
+            "tenant_id": "T6A",
+            "request_id": "F-req-2",
+            "at": 150,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "MIGRATION_TENANT_VIOLATION",
+              "message": "服务 SB 属于租户 T6B，迁移只限同租户",
+              "details": {}
+            }
+          }
+        },
+        {
+          "step": "same-tenant-move-ok",
+          "at": 160,
+          "result": {
+            "type": "migrate",
+            "tenant_id": "T6A",
+            "request_id": "F-req-3",
+            "at": 160,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "migration_id": "MF1",
+              "plan_id": "PF",
+              "affected_services": [
+                "SA",
+                "SA2"
+              ],
+              "evidence": [
+                {
+                  "service_id": "SA",
+                  "now": 160,
+                  "min_seats": 1,
+                  "seat_count": 1,
+                  "seat_ok": true,
+                  "min_for_actions": {
+                    "read": 1
+                  },
+                  "action_counts": {
+                    "read": 1
+                  },
+                  "action_violations": [],
+                  "eligible_identities": [
+                    "IA2"
+                  ],
+                  "credential_evidence": [
+                    {
+                      "credential_id": "CA2",
+                      "identity_id": "IA2",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 500,
+                      "effective_until": 500
+                    }
+                  ],
+                  "satisfied": true
+                },
+                {
+                  "service_id": "SA2",
+                  "now": 160,
+                  "min_seats": 0,
+                  "seat_count": 1,
+                  "seat_ok": true,
+                  "min_for_actions": {},
+                  "action_counts": {},
+                  "action_violations": [],
+                  "eligible_identities": [
+                    "IA"
+                  ],
+                  "credential_evidence": [
+                    {
+                      "credential_id": "CA",
+                      "identity_id": "IA",
+                      "generation": 1,
+                      "eligible": true,
+                      "reason": "OK",
+                      "valid_from": 0,
+                      "valid_until": 500,
+                      "effective_until": 400
+                    }
+                  ],
+                  "satisfied": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "G_generation_rotation_revoked_never_revives",
+      "results": [
+        {
+          "step": "rotate-I10-to-generation-2",
+          "at": 100,
+          "result": {
+            "type": "rotate_generation",
+            "tenant_id": "T7",
+            "request_id": "G-req-1",
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "identity_id": "I10",
+              "old_generation": 1,
+              "new_generation": 2,
+              "revoked_generations": [
+                1
+              ]
+            }
+          }
+        },
+        {
+          "step": "reader-seat-drops-to-one",
+          "at": 100,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T7",
+            "request_id": null,
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S7",
+              "from_time": 100,
+              "next_boundary": 501,
+              "stable_until": 501,
+              "coverage": {
+                "satisfied": false,
+                "seat_count": 1,
+                "min_seats": 2,
+                "action_counts": {
+                  "read": 1
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I11"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C10",
+                  "identity_id": "I10",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "GENERATION_STALE",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 500
+                },
+                {
+                  "credential_id": "C11",
+                  "identity_id": "I11",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "rollback-to-revoked-generation-rejected",
+          "at": 110,
+          "result": {
+            "type": "rotate_generation",
+            "tenant_id": "T7",
+            "request_id": "G-req-2",
+            "at": 110,
+            "replayed": false,
+            "status": "FAILED",
+            "error": {
+              "code": "GENERATION_NOT_NEW",
+              "message": "新代数 1 必须严格大于当前代数 2",
+              "details": {}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "H_reader_next_boundary",
+      "results": [
+        {
+          "step": "boundary-at-100-is-201",
+          "at": 100,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T8",
+            "request_id": null,
+            "at": 100,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S8",
+              "from_time": 100,
+              "next_boundary": 201,
+              "stable_until": 201,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 2,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 2
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I20",
+                  "I21"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C20",
+                  "identity_id": "I20",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C21",
+                  "identity_id": "I21",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                },
+                {
+                  "credential_id": "C22",
+                  "identity_id": "I22",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "NOT_YET_VALID",
+                  "valid_from": 300,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "boundary-at-250-is-300",
+          "at": 250,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T8",
+            "request_id": null,
+            "at": 250,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S8",
+              "from_time": 250,
+              "next_boundary": 300,
+              "stable_until": 300,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 1,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 1
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I21"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C20",
+                  "identity_id": "I20",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C21",
+                  "identity_id": "I21",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                },
+                {
+                  "credential_id": "C22",
+                  "identity_id": "I22",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "NOT_YET_VALID",
+                  "valid_from": 300,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "boundary-at-300-is-401",
+          "at": 300,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T8",
+            "request_id": null,
+            "at": 300,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S8",
+              "from_time": 300,
+              "next_boundary": 401,
+              "stable_until": 401,
+              "coverage": {
+                "satisfied": true,
+                "seat_count": 2,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 2
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": [
+                  "I21",
+                  "I22"
+                ]
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C20",
+                  "identity_id": "I20",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C21",
+                  "identity_id": "I21",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                },
+                {
+                  "credential_id": "C22",
+                  "identity_id": "I22",
+                  "generation": 1,
+                  "eligible": true,
+                  "reason": "OK",
+                  "valid_from": 300,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "step": "no-boundary-after-all-windows-close",
+          "at": 501,
+          "result": {
+            "type": "reader_coverage",
+            "tenant_id": "T8",
+            "request_id": null,
+            "at": 501,
+            "replayed": false,
+            "status": "OK",
+            "data": {
+              "service_id": "S8",
+              "from_time": 501,
+              "next_boundary": null,
+              "stable_until": null,
+              "coverage": {
+                "satisfied": false,
+                "seat_count": 0,
+                "min_seats": 1,
+                "action_counts": {
+                  "read": 0
+                },
+                "min_for_actions": {
+                  "read": 1
+                },
+                "eligible_identities": []
+              },
+              "credential_evidence": [
+                {
+                  "credential_id": "C20",
+                  "identity_id": "I20",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 0,
+                  "valid_until": 200,
+                  "effective_until": 200
+                },
+                {
+                  "credential_id": "C21",
+                  "identity_id": "I21",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 0,
+                  "valid_until": 400,
+                  "effective_until": 400
+                },
+                {
+                  "credential_id": "C22",
+                  "identity_id": "I22",
+                  "generation": 1,
+                  "eligible": false,
+                  "reason": "WINDOW_CLOSED",
+                  "valid_from": 300,
+                  "valid_until": 500,
+                  "effective_until": 500
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

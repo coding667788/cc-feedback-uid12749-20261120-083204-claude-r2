@@ -1,0 +1,536 @@
+{
+  "schema_version": 1,
+  "description": "离线服务身份退役协调器可重放场景。时间为整数逻辑时钟，时窗为闭区间 [valid_from, valid_until]。每条命令的 expect 为人工独立判定的期望值；测试同时用 solution.oracle 做独立交叉判定。",
+  "scenarios": [
+    {
+      "name": "A_action_gap_seats_ok",
+      "description": "候选覆盖的去重席位数达标（finalize 退役投影后仍有 2 席 >= min_seats=2），但具备 write 动作的合格身份只有 1 < 要求 2：finalize 必须报 COVERAGE_ACTION_GAP 而非席位缺口。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T1", "name": "tenant-1"}],
+        "services": [
+          {"service_id": "S1", "tenant_id": "T1", "min_seats": 2,
+           "min_for_actions": {"read": 2, "write": 2}}
+        ],
+        "identities": [
+          {"identity_id": "I1", "tenant_id": "T1", "generation": 1, "actions": ["read", "write"]},
+          {"identity_id": "I2", "tenant_id": "T1", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I3", "tenant_id": "T1", "generation": 1, "actions": ["read", "write"]},
+          {"identity_id": "I4", "tenant_id": "T1", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C1", "identity_id": "I1", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C2", "identity_id": "I2", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C3", "identity_id": "I3", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C4", "identity_id": "I4", "generation": 1, "valid_from": 0, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "C1", "service_id": "S1"},
+          {"credential_id": "C2", "service_id": "S1"},
+          {"credential_id": "C3", "service_id": "S1"},
+          {"credential_id": "C4", "service_id": "S1"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-two-candidates",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T1", "request_id": "A-req-1",
+            "params": {"tenant_id": "T1", "plan_id": "PA", "deadline": 200, "identity_ids": ["I1", "I2"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "reader-before-finalize-seats-3-write-2",
+          "at": 150,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T1",
+            "params": {"service_id": "S1"}
+          },
+          "expect": {"status": "OK", "seat_count": 4, "satisfied": true,
+                     "action_counts": {"read": 4, "write": 2},
+                     "eligible_identities": ["I1", "I2", "I3", "I4"]}
+        },
+        {
+          "name": "finalize-action-gap",
+          "at": 200,
+          "command": {
+            "type": "finalize", "tenant_id": "T1", "request_id": "A-req-2",
+            "params": {"tenant_id": "T1", "plan_id": "PA"}
+          },
+          "expect": {"status": "FAILED", "error_code": "COVERAGE_ACTION_GAP", "replayed": false}
+        }
+      ]
+    },
+    {
+      "name": "B_joint_retirement_failure",
+      "description": "两个身份各自单独退役都可行（剩 2 席 >= min_seats=1 的要求在此设计为 min_seats=2 的联合门槛：单独退役任一身份仍有 2 席，联合退役只剩 1 席），同时退役在 finalize 投影下报 COVERAGE_SEAT_GAP。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T2", "name": "tenant-2"}],
+        "services": [
+          {"service_id": "S2", "tenant_id": "T2", "min_seats": 2, "min_for_actions": {"read": 1}}
+        ],
+        "identities": [
+          {"identity_id": "I1", "tenant_id": "T2", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I2", "tenant_id": "T2", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I3", "tenant_id": "T2", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C1", "identity_id": "I1", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C2", "identity_id": "I2", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C3", "identity_id": "I3", "generation": 1, "valid_from": 0, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "C1", "service_id": "S2"},
+          {"credential_id": "C2", "service_id": "S2"},
+          {"credential_id": "C3", "service_id": "S2"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-both",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T2", "request_id": "B-req-1",
+            "params": {"tenant_id": "T2", "plan_id": "PB", "deadline": 200, "identity_ids": ["I1", "I2"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "reader-still-three-seats",
+          "at": 150,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T2",
+            "params": {"service_id": "S2"}
+          },
+          "expect": {"status": "OK", "seat_count": 3, "satisfied": true,
+                     "eligible_identities": ["I1", "I2", "I3"]}
+        },
+        {
+          "name": "finalize-joint-seat-gap",
+          "at": 200,
+          "command": {
+            "type": "finalize", "tenant_id": "T2", "request_id": "B-req-2",
+            "params": {"tenant_id": "T2", "plan_id": "PB"}
+          },
+          "expect": {"status": "FAILED", "error_code": "COVERAGE_SEAT_GAP", "replayed": false}
+        }
+      ],
+      "single_retirement_note": "min_seats=2：单独退役 I1 或 I2 之一，剩余合格身份为 2，恰好达标；联合退役只剩 I3 一个席位，失败。tests/test_domain.py 对两种单退役投影分别显式断言。"
+    },
+    {
+      "name": "C_exact_expiry",
+      "description": "时窗闭区间：at==valid_until（也是计划 deadline）凭据仍合格；finalize 退役 I4 后 I5 单独满足 min_seats=1，终结成功。下一时刻 201 起 I4 凭据失效（身份也已 RETIRED），服务席位归零。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T3", "name": "tenant-3"}],
+        "services": [
+          {"service_id": "S3", "tenant_id": "T3", "min_seats": 1, "min_for_actions": {"read": 1}}
+        ],
+        "identities": [
+          {"identity_id": "I4", "tenant_id": "T3", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I5", "tenant_id": "T3", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C3", "identity_id": "I4", "generation": 1, "valid_from": 0, "valid_until": 200},
+          {"credential_id": "C4", "identity_id": "I5", "generation": 1, "valid_from": 0, "valid_until": 400}
+        ],
+        "bindings": [
+          {"credential_id": "C3", "service_id": "S3"},
+          {"credential_id": "C4", "service_id": "S3"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-I4-deadline-200",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T3", "request_id": "C-req-1",
+            "params": {"tenant_id": "T3", "plan_id": "PC", "deadline": 200, "identity_ids": ["I4"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "reader-at-exact-deadline-still-two-seats",
+          "at": 200,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T3",
+            "params": {"service_id": "S3"}
+          },
+          "expect": {"status": "OK", "seat_count": 2, "satisfied": true,
+                     "eligible_identities": ["I4", "I5"]}
+        },
+        {
+          "name": "finalize-exactly-at-deadline-ok",
+          "at": 200,
+          "command": {
+            "type": "finalize", "tenant_id": "T3", "request_id": "C-req-2",
+            "params": {"tenant_id": "T3", "plan_id": "PC"}
+          },
+          "expect": {"status": "OK", "replayed": false,
+                     "retired_identities": ["I4"]}
+        },
+        {
+          "name": "reader-next-tick-I4-gone-I5-covers",
+          "at": 201,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T3",
+            "params": {"service_id": "S3"}
+          },
+          "expect": {"status": "OK", "seat_count": 1, "satisfied": true,
+                     "eligible_identities": ["I5"]}
+        },
+        {
+          "name": "reader-after-I5-window-closes-no-seats",
+          "at": 401,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T3",
+            "params": {"service_id": "S3"}
+          },
+          "expect": {"status": "OK", "seat_count": 0, "satisfied": false,
+                     "eligible_identities": []}
+        }
+      ]
+    },
+    {
+      "name": "D_cancel_then_reprepare",
+      "description": "首次 prepare 在 finalize 时席位不足而失败；cancel 不回滚已提交迁移、候选恢复 ACTIVE；重新 prepare 并迁入新凭据后第二次 finalize 成功。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T4", "name": "tenant-4"}],
+        "services": [
+          {"service_id": "S4", "tenant_id": "T4", "min_seats": 2, "min_for_actions": {"read": 1}},
+          {"service_id": "S4X", "tenant_id": "T4", "min_seats": 0, "min_for_actions": {}}
+        ],
+        "identities": [
+          {"identity_id": "I5", "tenant_id": "T4", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I6", "tenant_id": "T4", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I7", "tenant_id": "T4", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C5", "identity_id": "I5", "generation": 1, "valid_from": 0, "valid_until": 400},
+          {"credential_id": "C6", "identity_id": "I6", "generation": 1, "valid_from": 0, "valid_until": 400},
+          {"credential_id": "C7", "identity_id": "I7", "generation": 1, "valid_from": 0, "valid_until": 400}
+        ],
+        "bindings": [
+          {"credential_id": "C5", "service_id": "S4"},
+          {"credential_id": "C6", "service_id": "S4"},
+          {"credential_id": "C7", "service_id": "S4X"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-first-plan",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T4", "request_id": "D-req-1",
+            "params": {"tenant_id": "T4", "plan_id": "PD1", "deadline": 150, "identity_ids": ["I5"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "finalize-first-fails-seat-gap",
+          "at": 200,
+          "command": {
+            "type": "finalize", "tenant_id": "T4", "request_id": "D-req-2",
+            "params": {"tenant_id": "T4", "plan_id": "PD1"}
+          },
+          "expect": {"status": "FAILED", "error_code": "COVERAGE_SEAT_GAP", "replayed": false}
+        },
+        {
+          "name": "cancel-first-plan",
+          "at": 210,
+          "command": {
+            "type": "cancel", "tenant_id": "T4", "request_id": "D-req-3",
+            "params": {"tenant_id": "T4", "plan_id": "PD1"}
+          },
+          "expect": {"status": "OK", "replayed": false,
+                     "cancelled_identities": ["I5"], "retained_migrations": []}
+        },
+        {
+          "name": "reprepare-second-plan",
+          "at": 220,
+          "command": {
+            "type": "prepare", "tenant_id": "T4", "request_id": "D-req-4",
+            "params": {"tenant_id": "T4", "plan_id": "PD2", "deadline": 250, "identity_ids": ["I5"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "migrate-new-credential-into-S4",
+          "at": 230,
+          "command": {
+            "type": "migrate", "tenant_id": "T4", "request_id": "D-req-5",
+            "params": {
+              "tenant_id": "T4", "plan_id": "PD2", "migration_id": "MG1",
+              "moves": [
+                {"credential_id": "C7", "from_service_id": "S4X", "to_service_id": "S4"}
+              ]
+            }
+          },
+          "expect": {"status": "OK", "replayed": false,
+                     "affected_services": ["S4", "S4X"]}
+        },
+        {
+          "name": "finalize-second-plan-ok",
+          "at": 260,
+          "command": {
+            "type": "finalize", "tenant_id": "T4", "request_id": "D-req-6",
+            "params": {"tenant_id": "T4", "plan_id": "PD2"}
+          },
+          "expect": {"status": "OK", "replayed": false, "retired_identities": ["I5"]}
+        }
+      ]
+    },
+    {
+      "name": "E_idempotency",
+      "description": "request_id 租户内唯一：同 ID 同参数返回第一次持久化结果（replayed=true）；同 ID 异参拒绝 DUPLICATE_REQUEST；失败回执同样幂等。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T5", "name": "tenant-5"}],
+        "services": [
+          {"service_id": "S5", "tenant_id": "T5", "min_seats": 1, "min_for_actions": {"read": 1}}
+        ],
+        "identities": [
+          {"identity_id": "I8", "tenant_id": "T5", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C8", "identity_id": "I8", "generation": 1, "valid_from": 0, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "C8", "service_id": "S5"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-first",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T5", "request_id": "E-idem",
+            "params": {"tenant_id": "T5", "plan_id": "PE", "deadline": 300, "identity_ids": ["I8"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "prepare-same-id-same-params-replays",
+          "at": 110,
+          "command": {
+            "type": "prepare", "tenant_id": "T5", "request_id": "E-idem",
+            "params": {"tenant_id": "T5", "plan_id": "PE", "deadline": 300, "identity_ids": ["I8"]}
+          },
+          "expect": {"status": "OK", "replayed": true}
+        },
+        {
+          "name": "prepare-same-id-different-params-rejected",
+          "at": 120,
+          "command": {
+            "type": "prepare", "tenant_id": "T5", "request_id": "E-idem",
+            "params": {"tenant_id": "T5", "plan_id": "PE-OTHER", "deadline": 300, "identity_ids": ["I8"]}
+          },
+          "expect": {"status": "FAILED", "error_code": "DUPLICATE_REQUEST"}
+        },
+        {
+          "name": "finalize-before-deadline-fails",
+          "at": 200,
+          "command": {
+            "type": "finalize", "tenant_id": "T5", "request_id": "E-fail",
+            "params": {"tenant_id": "T5", "plan_id": "PE"}
+          },
+          "expect": {"status": "FAILED", "error_code": "DEADLINE_NOT_REACHED"}
+        },
+        {
+          "name": "finalize-same-request-replays-failure",
+          "at": 250,
+          "command": {
+            "type": "finalize", "tenant_id": "T5", "request_id": "E-fail",
+            "params": {"tenant_id": "T5", "plan_id": "PE"}
+          },
+          "expect": {"status": "FAILED", "error_code": "DEADLINE_NOT_REACHED", "replayed": true}
+        }
+      ]
+    },
+    {
+      "name": "F_cross_tenant_migration_rejected",
+      "description": "迁移只限同租户：跨租户移动报 MIGRATION_TENANT_VIOLATION；同租户移动成功，且整批对源/目标服务并集做覆盖检查。",
+      "bootstrap": {
+        "tenants": [
+          {"tenant_id": "T6A", "name": "tenant-6a"},
+          {"tenant_id": "T6B", "name": "tenant-6b"}
+        ],
+        "services": [
+          {"service_id": "SA", "tenant_id": "T6A", "min_seats": 1, "min_for_actions": {"read": 1}},
+          {"service_id": "SB", "tenant_id": "T6B", "min_seats": 1, "min_for_actions": {"read": 1}},
+          {"service_id": "SA2", "tenant_id": "T6A", "min_seats": 0, "min_for_actions": {}}
+        ],
+        "identities": [
+          {"identity_id": "IA", "tenant_id": "T6A", "generation": 1, "actions": ["read"]},
+          {"identity_id": "IA2", "tenant_id": "T6A", "generation": 1, "actions": ["read"]},
+          {"identity_id": "IB", "tenant_id": "T6B", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "CA", "identity_id": "IA", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "CA2", "identity_id": "IA2", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "CB", "identity_id": "IB", "generation": 1, "valid_from": 0, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "CA", "service_id": "SA"},
+          {"credential_id": "CA2", "service_id": "SA"},
+          {"credential_id": "CB", "service_id": "SB"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "prepare-in-tenant-a",
+          "at": 100,
+          "command": {
+            "type": "prepare", "tenant_id": "T6A", "request_id": "F-req-1",
+            "params": {"tenant_id": "T6A", "plan_id": "PF", "deadline": 400, "identity_ids": ["IA"]}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "cross-tenant-move-rejected",
+          "at": 150,
+          "command": {
+            "type": "migrate", "tenant_id": "T6A", "request_id": "F-req-2",
+            "params": {
+              "tenant_id": "T6A", "plan_id": "PF", "migration_id": "MFX",
+              "moves": [
+                {"credential_id": "CA", "from_service_id": "SA", "to_service_id": "SB"}
+              ]
+            }
+          },
+          "expect": {"status": "FAILED", "error_code": "MIGRATION_TENANT_VIOLATION"}
+        },
+        {
+          "name": "same-tenant-move-ok",
+          "at": 160,
+          "command": {
+            "type": "migrate", "tenant_id": "T6A", "request_id": "F-req-3",
+            "params": {
+              "tenant_id": "T6A", "plan_id": "PF", "migration_id": "MF1",
+              "moves": [
+                {"credential_id": "CA", "from_service_id": "SA", "to_service_id": "SA2"}
+              ]
+            }
+          },
+          "expect": {"status": "OK", "replayed": false,
+                     "affected_services": ["SA", "SA2"]}
+        }
+      ]
+    },
+    {
+      "name": "G_generation_rotation_revoked_never_revives",
+      "description": "代数轮换后旧代数凭据立即不合格（身份当前代数不匹配）且旧代数进入撤销名单；撤销代数不会复活；同代数新凭据也不能让旧凭据恢复。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T7", "name": "tenant-7"}],
+        "services": [
+          {"service_id": "S7", "tenant_id": "T7", "min_seats": 2, "min_for_actions": {"read": 1}}
+        ],
+        "identities": [
+          {"identity_id": "I10", "tenant_id": "T7", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I11", "tenant_id": "T7", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C10", "identity_id": "I10", "generation": 1, "valid_from": 0, "valid_until": 500},
+          {"credential_id": "C11", "identity_id": "I11", "generation": 1, "valid_from": 0, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "C10", "service_id": "S7"},
+          {"credential_id": "C11", "service_id": "S7"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "rotate-I10-to-generation-2",
+          "at": 100,
+          "command": {
+            "type": "rotate_generation", "tenant_id": "T7", "request_id": "G-req-1",
+            "params": {"tenant_id": "T7", "identity_id": "I10", "new_generation": 2}
+          },
+          "expect": {"status": "OK", "replayed": false}
+        },
+        {
+          "name": "reader-seat-drops-to-one",
+          "at": 100,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T7",
+            "params": {"service_id": "S7"}
+          },
+          "expect": {"status": "OK", "seat_count": 1, "satisfied": false,
+                     "eligible_identities": ["I11"]}
+        },
+        {
+          "name": "rollback-to-revoked-generation-rejected",
+          "at": 110,
+          "command": {
+            "type": "rotate_generation", "tenant_id": "T7", "request_id": "G-req-2",
+            "params": {"tenant_id": "T7", "identity_id": "I10", "new_generation": 1}
+          },
+          "expect": {"status": "FAILED", "error_code": "GENERATION_NOT_NEW"}
+        }
+      ],
+      "unit_test_note": "发放 gen2 新凭据 C12 并绑定 S7 后席位恢复为 2、以及撤销代数永不复活的完整验证，在 tests/test_domain.py::GenerationRotationTest 中用显式断言完成（runner 只承载命令流，引导数据变更不放在 cases 命令里）。"
+    },
+    {
+      "name": "H_reader_next_boundary",
+      "description": "读者查询给定时刻到下一已知凭据边界的覆盖证据：闭区间结束的下一时刻与未来时窗起点都是边界；无翻转时 next_boundary 为 null。期望值由 oracle 独立计算并与实现输出比对，另附显式边界断言。",
+      "bootstrap": {
+        "tenants": [{"tenant_id": "T8", "name": "tenant-8"}],
+        "services": [
+          {"service_id": "S8", "tenant_id": "T8", "min_seats": 1, "min_for_actions": {"read": 1}}
+        ],
+        "identities": [
+          {"identity_id": "I20", "tenant_id": "T8", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I21", "tenant_id": "T8", "generation": 1, "actions": ["read"]},
+          {"identity_id": "I22", "tenant_id": "T8", "generation": 1, "actions": ["read"]}
+        ],
+        "credentials": [
+          {"credential_id": "C20", "identity_id": "I20", "generation": 1, "valid_from": 0, "valid_until": 200},
+          {"credential_id": "C21", "identity_id": "I21", "generation": 1, "valid_from": 0, "valid_until": 400},
+          {"credential_id": "C22", "identity_id": "I22", "generation": 1, "valid_from": 300, "valid_until": 500}
+        ],
+        "bindings": [
+          {"credential_id": "C20", "service_id": "S8"},
+          {"credential_id": "C21", "service_id": "S8"},
+          {"credential_id": "C22", "service_id": "S8"}
+        ]
+      },
+      "commands": [
+        {
+          "name": "boundary-at-100-is-201",
+          "at": 100,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T8",
+            "params": {"service_id": "S8"}
+          },
+          "expect": {"status": "OK", "next_boundary": 201, "seat_count": 2}
+        },
+        {
+          "name": "boundary-at-250-is-300",
+          "at": 250,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T8",
+            "params": {"service_id": "S8"}
+          },
+          "expect": {"status": "OK", "next_boundary": 300, "seat_count": 1}
+        },
+        {
+          "name": "boundary-at-300-is-401",
+          "at": 300,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T8",
+            "params": {"service_id": "S8"}
+          },
+          "expect": {"status": "OK", "next_boundary": 401, "seat_count": 2}
+        },
+        {
+          "name": "no-boundary-after-all-windows-close",
+          "at": 501,
+          "command": {
+            "type": "reader_coverage", "tenant_id": "T8",
+            "params": {"service_id": "S8"}
+          },
+          "expect": {"status": "OK", "next_boundary": null, "seat_count": 0, "satisfied": false}
+        }
+      ]
+    }
+  ]
+}
